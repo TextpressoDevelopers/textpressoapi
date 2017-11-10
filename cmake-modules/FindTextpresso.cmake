@@ -1,6 +1,6 @@
 # find Textpresso core library
 
-FIND_PATH( Textpresso_INCLUDE_DIR NAMES TpcCommons.h TpcIndexReader.h TpcIndexWriter.h PATHS ENV PATH PATH_SUFFIXES
+FIND_PATH( Textpresso_INCLUDE_DIR NAMES CASManager.h IndexManager.h PATHS ENV PATH PATH_SUFFIXES
         include textpresso)
 
 FIND_LIBRARY( Textpresso_LIBRARY NAMES textpresso PATHS PATH PATH_SUFFIXES lib lib-release lib_release )

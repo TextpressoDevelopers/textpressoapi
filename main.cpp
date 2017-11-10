@@ -1,21 +1,19 @@
 #include <iostream>
 #include "crow_all.h"
-#include <textpresso/TpcIndexReader.h>
+#include <textpresso/IndexManager.h>
 
-using namespace tpc;
+using namespace tpc::index;
 using namespace std;
 
 int main() {
     static const string index_root_dir = "/usr/local/textpresso/luceneindex";
     string line;
     map<string, vector<string>> subindices_map;
-    vector<string> all_subindices;
     vector<string> all_literatures;
     ifstream lit_file (index_root_dir + "/subindex.config");
     if (lit_file.is_open()) {
         while ( getline (lit_file, line) ) {
             subindices_map[line.substr(0, line.find_first_of('_'))].push_back(line);
-            all_subindices.push_back(line);
             all_literatures.push_back(line.substr(0, line.find_first_of('_')));
         }
         lit_file.close();
@@ -23,14 +21,16 @@ int main() {
         cerr << "unable to read subindex.config file" << endl;
     }
 
+    IndexManager indexManager(index_root_dir);
+
     crow::SimpleApp app;
 
-    CROW_ROUTE(app, "/textpresso/api/1.0/search_documents")
+    CROW_ROUTE(app, "/v1/textpresso/api/search_documents")
             .methods("POST"_method)
-            ([&subindices_map, &all_subindices](const crow::request& req){
+            ([&subindices_map, &all_literatures, &indexManager](const crow::request& req){
                 // parse request
                 auto json_req = crow::json::load(req.body);
-                tpc::Query query = tpc::Query();
+                tpc::index::Query query = tpc::index::Query();
                 if (!json_req)
                     return crow::response(400);
                 query.query_text = json_req["query"].s();
@@ -47,14 +47,14 @@ int main() {
                 if (json_req.has("literatures") && json_req["literatures"].size() > 0) {
                     for (const auto& literature : json_req["literatures"]) {
                         for (const string& subindex : subindices_map[literature.s()]) {
-                            query.subindices.push_back(subindex);
+                            query.literatures.push_back(subindex);
                         }
                     }
                 } else {
-                    query.subindices = all_subindices;
+                    query.literatures = all_literatures;
                 }
                 // call textpresso library
-                SearchResults results = TpcIndexReader::search_documents(index_root_dir, query);
+                SearchResults results = indexManager.search_documents(query);
                 // response
                 crow::json::wvalue json_resp;
                 for (int i = 0; i < results.hit_documents.size(); ++i) {
@@ -75,12 +75,12 @@ int main() {
                 return crow::response(json_resp);
             });
 
-    CROW_ROUTE(app, "/textpresso/api/1.0/get_documents_details")
+    CROW_ROUTE(app, "/v1/textpresso/api/get_documents_details")
             .methods("POST"_method)
-                    ([&all_subindices](const crow::request& req){
+                    ([&all_literatures, &indexManager](const crow::request& req){
                         // parse request
                         auto json_req = crow::json::load(req.body);
-                        vector<string> sub_idx = all_subindices;
+                        vector<string> sub_lit = all_literatures;
                         vector<DocumentSummary> documentSummaries;
                         set<string> include_doc_fields;
                         set<string> include_sentence_fields;
@@ -104,14 +104,14 @@ int main() {
                                 include_doc_fields.insert(field.s());
                             }
                         } else {
-                            include_doc_fields = tpc::document_fields_detailed;
+                            include_doc_fields = tpc::index::document_fields_detailed;
                         }
                         if (json_req.has("include_sentence_fields") && json_req["include_sentence_fields"].size() > 0) {
                             for (const auto& field : json_req["include_sentence_fields"]) {
                                 include_sentence_fields.insert(field.s());
                             }
                         } else {
-                            include_sentence_fields = tpc::sentence_fields_detailed;
+                            include_sentence_fields = tpc::index::sentence_fields_detailed;
                         }
                         if (json_req.has("exclude_doc_fields") && json_req["exclude_doc_fields"].size() > 0) {
                             for (const auto& field : json_req["exclude_doc_fields"]) {
@@ -124,8 +124,8 @@ int main() {
                             }
                         }
                         // call textpresso library
-                        vector<DocumentDetails> results = TpcIndexReader::get_documents_details(
-                                documentSummaries, index_root_dir, sub_idx, false, include_sentences_details,
+                        vector<DocumentDetails> results = indexManager.get_documents_details(
+                                documentSummaries, sub_lit, false, include_sentences_details,
                                 include_doc_fields, include_sentence_fields, exclude_doc_fields,
                                 exclude_sentence_fields);
                         // response
@@ -144,7 +144,7 @@ int main() {
                         return crow::response(json_resp);
                     });
 
-    CROW_ROUTE(app, "/textpresso/api/1.0/available_literatures")([&all_literatures]() {
+    CROW_ROUTE(app, "/v1/textpresso/api/available_literatures")([&all_literatures]() {
         crow::json::wvalue x;
         for (int i = 0; i < all_literatures.size(); ++i) {
             x[i] = all_literatures[i];
@@ -152,19 +152,19 @@ int main() {
         return crow::response(x);
     });
 
-    CROW_ROUTE(app, "/textpresso/api/1.0/available_doc_fields")([]() {
+    CROW_ROUTE(app, "/v1/textpresso/api/available_doc_fields")([]() {
         crow::json::wvalue x;
         int i = 0;
-        for (const auto& field : tpc::document_fields_detailed) {
+        for (const auto& field : tpc::index::document_fields_detailed) {
             x[i++] = field;
         }
         return crow::response(x);
     });
 
-    CROW_ROUTE(app, "/textpresso/api/1.0/available_sentence_fields")([]() {
+    CROW_ROUTE(app, "/v1/textpresso/api/available_sentence_fields")([]() {
         crow::json::wvalue x;
         int i = 0;
-        for (const auto& field : tpc::sentence_fields_detailed) {
+        for (const auto& field : tpc::index::sentence_fields_detailed) {
             x[i++] = field;
         }
         return crow::response(x);

@@ -16,4 +16,4 @@ include_directories(${Textpresso_INCLUDE_DIR})
 
 set(SOURCE_FILES main.cpp)
 add_executable(textpressoapi ${SOURCE_FILES})
-target_link_libraries(textpressoapi boost_system pthread textpresso uima xerces-c)
+target_link_libraries(textpressoapi boost_system pthread textpresso uima xerces-c lucene++)
