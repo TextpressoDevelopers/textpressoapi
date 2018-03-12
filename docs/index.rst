@@ -9,18 +9,12 @@ returned by searches are sorted by their score. Scores for sentence searches is 
 sentences in each document.
 
 Since searches might yield a large number of documents, they only return summary information of the articles in order to
- obtain better performances. To read the detailed information contained the articles obtained by a search, Textpresso
- API provides a set of dedicated functions.
-
-In addition to searching articles, Textpresso API provides functions to add new pdf or xml documents to the
-database. The text is extracted from documents added to the system and divided into sentences. Then, the documents are
-classified into different corpora according to their content and the the biological categories are automatically
-annotated. The resulting information is stored in Textpresso and indexed for searches.
-
-Textpresso API provides also functionalities to add biological categories.
+obtain better performances. To read the detailed information contained the articles obtained by a search, Textpresso
+API limits the number of documents that can be retrieved by each call to 200 and provides parameters for pagination and
+to explicitly control the output of fields with potentially large content (e.g., document full text).
 
 The base endpoint of the API is
-*http://localhost:18080/textpresso/api/1.0/request_name* where *request_name* is the request to call.
+*http://localhost:18080/textpresso/api/1.0/request_name* where *request_name* is the API to call.
 
 
 .. toctree::
@@ -28,9 +22,6 @@ The base endpoint of the API is
    :caption: Contents:
 
    search_documents
-   add_documents
-   categories
-
 
 
 Indices and tables

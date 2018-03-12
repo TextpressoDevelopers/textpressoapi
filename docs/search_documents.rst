@@ -1,7 +1,7 @@
 Search Documents in Textpresso
 ==============================
 
-Search for documents indexed by Textpresso through queries on fulltext or sentences.
+Search documents indexed by Textpresso through queries on fulltext or sentences.
 
 These are the APIs to perform document searches:
 
@@ -9,16 +9,33 @@ These are the APIs to perform document searches:
 
    Search for documents indexed by Textpresso
 
-   :<json string query: the query text
-   :<json string type: the type of search to perform. Accepted values are: **document**, **sentence_without_ids**, and
-                       **sentence_with_ids**
-   :<json boolean case_sensitive: whether to perform a case sensitive search. *Default value* = **false**
-   :<json boolean sort_by_year: whether the results have to be sorted by publication date. *Default value* = **false**
-   :<json jsonarr literatures: the list of literatures to search. *Default value* = search all literatures
+   :<json string keywords: *(optional)* the keywords to match in the text
+   :<jsonarr string categories: *(optional)* a set of categories to match in the text
+   :<jsonarr string corpora: *(optional)* restrict the search to the specified list of corpora
+   :<json string type: the type of search to perform. Accepted values are: **document** to query the fulltext of
+                       documents and **sentence** to search in each sentence separately. *Default value* is **document**
+   :<json boolean case_sensitive: whether to perform a case sensitive search. *Default value* is **false**
+   :<json boolean sort_by_year: whether the results have to be sorted by publication date. *Default value* is **false**
+   :<json boolean include_fulltext: whether to return the fulltext and abstract of the documents.
+                                    *Default value* is **false**
+   :<json int since_num: used for pagination. Skip the first results and return entries from the specified number. Note
+                         that the counter starts from 0 - i.e., the first document is number 0.
+   :<json int count: used for pagination. Return up to the specified number of results. *Maximum value* is **200**
 
    **Response Datatype Format**
 
-   The returned json object reflects the structure of the SearchResult object defined in textpressocentral C++ library.
+   The returned data is a json array of objects, each of which contains the following fields:
+
+   :>json string identifier: the document identifier
+   :>json string score: the score of the document - an absolute number that indicates the degree to which the document
+                        matches the provided query
+   :>json string title: the title of the document
+   :>json string author: the author(s) of the document
+   :>json string accession: the accession of the document
+   :>json string journal: the journal of the document
+   :>json string doc_type: the type of document (e.g., research article, review)
+   :>json string fulltext: the fulltext of the document. Only if *include_fulltext* is set to **true** in the request.
+   :>json string journal: the abstract of the document. Only if *include_fulltext* is set to **true** in the request.
 
    **Example request**:
 
@@ -29,80 +46,15 @@ These are the APIs to perform document searches:
       Accept: application/json
 
       {
-         "query":"sentence:DYN-1",
-         "type":"sentence_without_ids",
-         "case_sensitive":false,
-         "sort_by_year":false
-         "literatures":[
-                          "C. elegans",
-                          "C. elegans Supplementals"
-                       ]
-      }
-
-   **Example response**:
-
-   .. sourcecode:: http
-
-      HTTP/1.1 200 OK
-      Vary: Accept
-      Content-Type: text/javascript
-
-      {
-         "max_score":2930.69,
-         "min_score":10.1792,
-         "total_num_sentences":2,
-         "hit_documents":[
-                            {
-                               "score":2930.69,
-                               "identifier":"eec99f625bd88d56"
-                            },
-                            {
-                               "score":2669.16,
-                               "identifier":"0c462283ed4ac35e"
-                            }
-                         ]
-      }
-
-
-.. http:post:: /textpresso/api/1.0/get_documents_details
-
-   Get detailed information about documents and, optionally, about their sentences
-
-   :<json vector docs_to_get: the list of documents to search with their identifiers and the sentences for which
-                                          to retrieve detailed information
-   :<json boolean include_sentences_details: whether to retrieve detailed information for the sentences of the documents
-                                                         specified in the **doc_to_get** object. *Default value* = **false**
-   :<json vector include_doc_fields: the list of fields to retrieve for the documents. **Default value** = all fields
-   :<json vector include_sentence_fields: the list of fields to retrieve for the sentences. **Default value** = all
-                                          fields
-   :<json vector exclude_doc_fields: the list of document fields to exclude from the results. **Default value** =
-                                     **none**
-   :<json vector exclude_sentence_fields: the list of sentence fields to exclude from the results. **Default value** =
-                                          **none**
-
-   **Response Data Format**
-
-   The returned json vector contains objects that reflect the structure of the DocumentDetails object defined in
-   textpressocentral C++ library.
-
-   **Example request**:
-
-   .. sourcecode:: http
-
-      POST /textpresso/api/1.0/get_documents_details HTTP/1.1
-      Host: localhost:18080
-      Accept: application/json
-
-      {
-         "docs_to_get":[
-                          {
-                             "identifier":"eec99f625bd88d56",
-                             "sentences_to_read":[1,2,3]
-                          }
-                       ],
-         "include_sentences_details":true,
-         "exclude_doc_fields":["fulltext_compressed"],
-         "exclude_doc_fields":["fulltext_cat_compressed"]
+         "keywords": "DYN-1",
+         "type": "document",
+         "case_sensitive": false,
+         "sort_by_year": false,
+         "count": 2,
+         "corpora": [
+                       "C. elegans",
+                       "C. elegans Supplementals"
+                    ]
       }
 
    **Example response**:
@@ -115,20 +67,29 @@ These are the APIs to perform document searches:
 
       [
          {
-            "author":"BEGIN He Bin, Yu Xiaomeng, Margolis Moran, Liu Xianghua, Leng Xiaohong, Etzion Yael, Zheng Fei, Lu Nan, Quiocho Florante A., Danino Dganit, Zhou Zheng, Shaw Janet M. END",
-            "journal":"BEGIN Molecular Biology of the Cell END",
-            "title":"BEGIN      Live-Cell Imaging in      <named-content content-type=\"genus-species\">Caenorhabditis elegans</named-content>      Reveals the Distinct Roles of Dynamin Self-Assembly and Guanosine Triphosphate Hydrolysis in the Removal of Apoptotic Cells     END","filepath":"PMCOA C. elegans/Mol_Biol_Cell_2010_Feb_15_21(4)_610-629/zmk610.tpcas","accession":"PMID       20016007",
-            "fulltext":"",
-            "categories_string":"",
-            "literature":"PMCOA C. elegans",
-            "abstract":"    <p>During cell corpse removal, dynamin's self-assembly and GTP hydrolysis activities establish a precise dynamic control of DYN-1's transient association to its target membranes. Dynamin's dynamic membrane association controls the mechanism that underlies the recruitment of downstream effectors, such as small GTPases RAB-5 and RAB-7, to target membranes.</p>   "
+            "doc_type": "Journal_article",
+            "score": 0.0418161,
+            "identifier": "I5m",
+            "title": "Factors regulating the abundance and localization of synaptobrevin in the plasma membrane.",
+            "author": "Dittman JS ; Kaplan JM",
+            "accession": " Other:doi:10.1073\\/pnas.0600784103 PMID:16844789  WBPaper00027755",
+            "journal": "Proc Natl Acad Sci U S A"
+         },
+         {
+            "doc_type": "Journal_article",
+            "score": 0.032331,
+            "identifier": "B4r",
+            "title": "A dynamin GTPase mutation causes a rapid and reversible temperature-inducible locomotion defect in C. elegans.",
+            "author": "Clark SG ; Shurland D-L ; Meyerowitz EM ; Bargmann CI ; Van der Bliek AM",
+            "accession": " Other:cgc2892 doi:10.1073\\/pnas.94.19.10438 PMID:9294229  WBPaper00002892",
+            "journal": "Proc Natl Acad Sci U S A"
          }
       ]
 
 
-.. http:get:: /textpresso/api/1.0/available_literatures
+.. http:get:: /textpresso/api/1.0/available_corpora
 
-   Get the list of literatures available on the server
+   Get the list of corpora available on the server
 
    **Response Data Format**
 
@@ -138,7 +99,7 @@ These are the APIs to perform document searches:
 
    .. sourcecode:: http
 
-      GET /textpresso/api/1.0/available_literatures HTTP/1.1
+      GET /textpresso/api/1.0/available_corpora HTTP/1.1
       Host: localhost:18080
 
    **Example response**:
@@ -150,55 +111,3 @@ These are the APIs to perform document searches:
       Content-Type: text/javascript
 
       ["C. elegans","C. elegans Supplementals","PMCOA C. elegans","PMCOA Animal"]
-
-
-.. http:get:: /textpresso/api/1.0/available_doc_fields
-
-   Get the list of document fields available on the server
-
-   **Response Data Format**
-
-   A json array of strings
-
-   **Example request**:
-
-   .. sourcecode:: http
-
-      GET /textpresso/api/1.0/available_doc_fields HTTP/1.1
-      Host: localhost:18080
-
-   **Example response**:
-
-   .. sourcecode:: http
-
-      HTTP/1.1 200 OK
-      Vary: Accept
-      Content-Type: text/javascript
-
-      ["abstract_compressed","accession_compressed","author_compressed","filepath","fulltext_cat_compressed","fulltext_compressed","identifier","journal_compressed","literature_compressed","title_compressed","year"]
-
-
-.. http:get:: /textpresso/api/1.0/available_sentence_fields
-
-   Get the list of sentence fields available on the server
-
-   **Response Data Format**
-
-   A json array of strings
-
-   **Example request**:
-
-   .. sourcecode:: http
-
-      GET /textpresso/api/1.0/available_doc_fields HTTP/1.1
-      Host: localhost:18080
-
-   **Example response**:
-
-   .. sourcecode:: http
-
-      HTTP/1.1 200 OK
-      Vary: Accept
-      Content-Type: text/javascript
-
-      ["begin","end","sentence_cat_compressed","sentence_compressed","sentence_id"]
