@@ -5,7 +5,7 @@ Search documents indexed by Textpresso through queries on fulltext or sentences.
 
 These are the APIs to perform document searches:
 
-.. https:post:: /textpresso/api/1.0/search_documents
+.. http:post:: /textpresso/api/1.0/search_documents
 
    Search for documents indexed by Textpresso. **Requires authentication**
 
@@ -54,9 +54,9 @@ These are the APIs to perform document searches:
 
    **Example response**:
 
-   .. sourcecode:: https
+   .. sourcecode:: http
 
-      HTTPS/1.1 200 OK
+      HTTP/1.1 200 OK
       Vary: Accept
       Content-Type: text/javascript
 
@@ -82,7 +82,7 @@ These are the APIs to perform document searches:
       ]
 
 
-.. https:post:: /textpresso/api/1.0/get_documents_count
+.. http:post:: /textpresso/api/1.0/get_documents_count
 
    Get the number of documents that match a search query. **Requires authentication**
 
@@ -95,9 +95,9 @@ These are the APIs to perform document searches:
 
    **Example request**:
 
-   .. sourcecode:: https
+   .. sourcecode:: http
 
-      POST /textpresso/api/1.0/search_documents HTTPS/1.1
+      POST /textpresso/api/1.0/search_documents HTTP/1.1
       Host: textpressocentral.org:18080
       Accept: application/json
 
@@ -115,9 +115,9 @@ These are the APIs to perform document searches:
 
    **Example response**:
 
-   .. sourcecode:: https
+   .. sourcecode:: http
 
-      HTTPS/1.1 200 OK
+      HTTP/1.1 200 OK
       Vary: Accept
       Content-Type: text/javascript
 
@@ -126,7 +126,7 @@ These are the APIs to perform document searches:
       }
 
 
-.. https:get:: /textpresso/api/1.0/available_corpora
+.. http:get:: /textpresso/api/1.0/available_corpora
 
    Get the list of corpora available on the server
 
@@ -136,16 +136,16 @@ These are the APIs to perform document searches:
 
    **Example request**:
 
-   .. sourcecode:: https
+   .. sourcecode:: http
 
-      GET /textpresso/api/1.0/available_corpora HTTPS/1.1
+      GET /textpresso/api/1.0/available_corpora HTTP/1.1
       Host: textpressocentral.org:18080
 
    **Example response**:
 
-   .. sourcecode:: https
+   .. sourcecode:: http
 
-      HTTPS/1.1 200 OK
+      HTTP/1.1 200 OK
       Vary: Accept
       Content-Type: text/javascript
 
