@@ -7,15 +7,10 @@ These are the APIs to perform document searches:
 
 .. http:post:: /textpresso/api/1.0/search_documents
 
-   Search for documents indexed by Textpresso
+   Search for documents indexed by Textpresso. **Requires authentication**
 
-   :<json string keywords: *(optional)* the keywords to match in the text
-   :<jsonarr string categories: *(optional)* a set of categories to match in the text
-   :<jsonarr string corpora: *(optional)* restrict the search to the specified list of corpora
-   :<json string type: the type of search to perform. Accepted values are: **document** to query the fulltext of
-                       documents and **sentence** to search in each sentence separately. *Default value* is **document**
-   :<json boolean case_sensitive: whether to perform a case sensitive search. *Default value* is **false**
-   :<json boolean sort_by_year: whether the results have to be sorted by publication date. *Default value* is **false**
+   :<json string token: a valid access token. See :doc:`obtaining_a_token` for further information on how to get one.
+   :<json object query: a query object (see :doc:`query_object` for more details)
    :<json boolean include_fulltext: whether to return the fulltext and abstract of the documents.
                                     *Default value* is **false**
    :<json int since_num: used for pagination. Skip the first results and return entries from the specified number. Note
@@ -85,6 +80,50 @@ These are the APIs to perform document searches:
             "journal": "Proc Natl Acad Sci U S A"
          }
       ]
+
+
+.. http:post:: /textpresso/api/1.0/get_documents_count
+
+   Get the number of documents that match a search query. **Requires authentication**
+
+   :<json string token: a valid access token. See :doc:`obtaining_a_token` for further information on how to get one.
+   :<json object query: a query object (see :doc:`query_object` for more details)
+
+   **Response Datatype Format**
+
+   :>json int counter: the number of documents matching the query
+
+   **Example request**:
+
+   .. sourcecode:: http
+
+      POST /textpresso/api/1.0/search_documents HTTP/1.1
+      Host: localhost:18080
+      Accept: application/json
+
+      {
+         "keywords": "DYN-1",
+         "type": "document",
+         "case_sensitive": false,
+         "sort_by_year": false,
+         "count": 2,
+         "corpora": [
+                       "C. elegans",
+                       "C. elegans Supplementals"
+                    ]
+      }
+
+   **Example response**:
+
+   .. sourcecode:: http
+
+      HTTP/1.1 200 OK
+      Vary: Accept
+      Content-Type: text/javascript
+
+      {
+        "counter": 229
+      }
 
 
 .. http:get:: /textpresso/api/1.0/available_corpora

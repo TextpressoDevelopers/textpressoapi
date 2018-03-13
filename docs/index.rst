@@ -22,6 +22,8 @@ The base endpoint of the API is
    :caption: Contents:
 
    search_documents
+   query_object
+   obtaining_a_token
 
 
 Indices and tables

@@ -14,18 +14,57 @@ using namespace boost::filesystem;
 namespace po = boost::program_options;
 
 
-bool is_user_valid(const string& db_path, const string& username, const string& password) {
+bool is_token_valid(const string& db_path, const string& token) {
     try {
         SQLite::Database db(db_path);
-        SQLite::Statement query(db, "SELECT * FROM users WHERE username = ? AND password = ?");
-        query.bind(1, username);
-        query.bind(2, password);
+        SQLite::Statement query(db, "SELECT * FROM tokens WHERE token = ?");
+        query.bind(1, token);
         query.executeStep();
         return query.hasRow();
     }
     catch (std::exception& e) {
         std::cout << "exception: " << e.what() << std::endl;
     }
+}
+
+tpc::index::Query get_query(const crow::json::rvalue& json_req, const IndexManager& indexManager) {
+    tpc::index::Query query;
+    if (!json_req.has("query")) {
+        throw runtime_error("query not specified");
+    }
+    auto json_query = json_req["query"];
+    if (json_query.has("keywords"))
+        query.keyword = json_query["keywords"].s();
+    if (json_query.has("categories") && json_query["categories"].size() > 0) {
+        for (auto& category : json_query["categories"]) {
+            query.categories.push_back(category.s());
+        }
+    }
+    if (json_query.has("type") && (json_query["type"].s() == "document" ||
+                                 json_query["type"].s() == "sentence")) {
+        string type = json_query["type"].s();
+        if (type == "document") {
+            query.type = QueryType::document;
+        } else if (type == "sentence") {
+            query.type = QueryType::sentence;
+        }
+    } else {
+        throw runtime_error("query type not specified");
+    }
+    if (json_query.has("case_sensitive")) {
+        query.case_sensitive = json_query["case_sensitive"].b();
+    }
+    if (json_query.has("sort_by_year")) {
+        query.sort_by_year = json_query["sort_by_year"].b();
+    }
+    if (json_query.has("corpora") && json_query["corpora"].size() > 0) {
+        for (auto& corpus : json_query["corpora"]) {
+            query.literatures.push_back(corpus.s());
+        }
+    } else {
+        query.literatures = indexManager.get_available_corpora();
+    }
+    return query;
 }
 
 int main(int argc, const char* argv[]) {
@@ -74,14 +113,13 @@ int main(int argc, const char* argv[]) {
             ([&indexManager, &login_database](const crow::request& req){
                 // parse request
                 auto json_req = crow::json::load(req.body);
-                tpc::index::Query query = tpc::index::Query();
                 if (!json_req)
                     return crow::response(400);
-                if (!json_req.has("username") || !json_req.has("password")) {
-                    return crow::response(400);
+                if (!json_req.has("token")) {
+                    return crow::response(401);
                 }
-                if (!is_user_valid(login_database, json_req["username"].s(), json_req["password"].s())) {
-                    return crow::response(501);
+                if (!is_token_valid(login_database, json_req["token"].s())) {
+                    return crow::response(401);
                 }
                 int64_t since_num(0);
                 int64_t count(200);
@@ -92,36 +130,11 @@ int main(int argc, const char* argv[]) {
                 bool include_text(false);
                 if (json_req.has("include_fulltext"))
                     include_text = json_req["include_fulltext"].b();
-                if (json_req.has("keywords"))
-                    query.keyword = json_req["keywords"].s();
-                if (json_req.has("categories") && json_req["categories"].size() > 0) {
-                    for (auto& category : json_req["categories"]) {
-                        query.categories.push_back(category.s());
-                    }
-                }
-                if (json_req.has("type") && (json_req["type"].s() == "document" ||
-                        json_req["type"].s() == "sentence")) {
-                    string type = json_req["type"].s();
-                    if (type == "document") {
-                        query.type = QueryType::document;
-                    } else if (type == "sentence") {
-                        query.type = QueryType::sentence;
-                    }
-                } else {
-                    return crow::response(511);
-                }
-                if (json_req.has("case_sensitive")) {
-                    query.case_sensitive = json_req["case_sensitive"].b();
-                }
-                if (json_req.has("sort_by_year")) {
-                    query.sort_by_year = json_req["sort_by_year"].b();
-                }
-                if (json_req.has("corpora") && json_req["corpora"].size() > 0) {
-                    for (auto& corpus : json_req["corpora"]) {
-                        query.literatures.push_back(corpus.s());
-                    }
-                } else {
-                    query.literatures = indexManager.get_available_corpora();
+                tpc::index::Query query;
+                try {
+                     query = get_query(json_req, indexManager);
+                } catch (const runtime_error& e) {
+                    return crow::response(400);
                 }
                 // call textpresso library
                 SearchResults results = indexManager.search_documents(query);
@@ -170,6 +183,33 @@ int main(int argc, const char* argv[]) {
         }
         return crow::response(x);
     });
+
+    CROW_ROUTE(app, "/v1/textpresso/api/get_documents_count")
+            .methods("POST"_method)
+                    ([&indexManager, &login_database](const crow::request& req){
+                        // parse request
+                        auto json_req = crow::json::load(req.body);
+                        if (!json_req)
+                            return crow::response(400);
+                        if (!json_req.has("token")) {
+                            return crow::response(400);
+                        }
+                        if (!is_token_valid(login_database, json_req["token"].s())) {
+                            return crow::response(401);
+                        }
+                        tpc::index::Query query;
+                        try {
+                            query = get_query(json_req, indexManager);
+                        } catch (const runtime_error& e) {
+                            return crow::response(400);
+                        }
+                        // call textpresso library
+                        SearchResults results = indexManager.search_documents(query);
+                        // response
+                        crow::json::wvalue json_resp;
+                        json_resp = results.hit_documents.size();
+                        return crow::response(json_resp);
+                    });
 
     if (!ssl_cert.empty() && !ssl_key.empty()) {
         app.port(18080).ssl_file(ssl_cert, ssl_key).multithreaded().run();
