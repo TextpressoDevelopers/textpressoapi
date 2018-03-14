@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.8)
+cmake_minimum_required(VERSION 3.5)
 project(textpressoapi)
 
 execute_process(COMMAND git submodule update --init -- thirdparty/SQLiteCpp
