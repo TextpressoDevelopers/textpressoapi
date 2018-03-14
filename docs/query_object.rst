@@ -7,7 +7,18 @@ Calls that require a query object must contain the following fields:
 
 .. http:any:: query
 
-   :<json string keywords: *(optional)* the keywords to match in the text
+   :<json string keywords: *(optional)* the keywords to match in the text. Can contain logical operators AND and OR and
+                           grouping by round brackets
+   :<json string exclude_keywords: *(optional)* the keywords to exclude. Can contain logical operators AND and OR and
+                           grouping by round brackets
+   :<json string year: *(optional)* year of publication of the paper
+   :<json string author: *(optional)* the author(s) of the paper
+   :<json string accession: *(optional)* the accession of the paper
+   :<json string journal: *(optional)* the journal where the paper has been published
+   :<json string paper_type: *(optional)* the type of paper (e.g., research_article, review)
+   :<json bool exact_match_author: *(optional)* apply exact match on the author field
+   :<json bool exact_match_journal: *(optional)* apply exact match on the journal field
+   :<json bool categories_and_ed: *(optional)* use AND logical operator between the provided categories
    :<jsonarr string categories: *(optional)* a set of categories to match in the text
    :<jsonarr string corpora: *(optional)* restrict the search to the specified list of corpora
    :<json string type: the type of search to perform. Accepted values are: **document** to query the fulltext of

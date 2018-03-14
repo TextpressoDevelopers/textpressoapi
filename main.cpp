@@ -27,22 +27,58 @@ bool is_token_valid(const string& db_path, const string& token) {
     }
 }
 
+bool is_superuser(const string& db_path, const string& token) {
+    try {
+        SQLite::Database db(db_path);
+        SQLite::Statement query(db, "SELECT superuser FROM tokens WHERE token = ?");
+        query.bind(1, token);
+        query.executeStep();
+        if (query.hasRow()) {
+            return static_cast<bool>(static_cast<int>(query.getColumn("superuser")));
+        } else {
+            return false;
+        }
+    }
+    catch (std::exception& e) {
+        std::cout << "exception: " << e.what() << std::endl;
+    }
+}
+
 tpc::index::Query get_query(const crow::json::rvalue& json_req, const IndexManager& indexManager) {
     tpc::index::Query query;
     if (!json_req.has("query")) {
         throw runtime_error("query not specified");
     }
-    auto json_query = json_req["query"];
-    if (json_query.has("keywords"))
-        query.keyword = json_query["keywords"].s();
-    if (json_query.has("categories") && json_query["categories"].size() > 0) {
-        for (auto& category : json_query["categories"]) {
+    if (json_req["query"].has("keywords"))
+        query.keyword = json_req["query"]["keywords"].s();
+    if (json_req["query"].has("categories") && json_req["query"]["categories"].size() > 0) {
+        for (auto& category : json_req["query"]["categories"]) {
             query.categories.push_back(category.s());
         }
     }
-    if (json_query.has("type") && (json_query["type"].s() == "document" ||
-                                 json_query["type"].s() == "sentence")) {
-        string type = json_query["type"].s();
+    if (json_req["query"].has("exclude_keywords"))
+        query.exclude_keyword = json_req["query"]["exclude_keywords"].s();
+    if (json_req["query"].has("year"))
+        query.year = json_req["query"]["year"].s();
+    if (json_req["query"].has("author"))
+        query.author = json_req["query"]["author"].s();
+    if (json_req["query"].has("accession"))
+        query.accession = json_req["query"]["accession"].s();
+    if (json_req["query"].has("journal"))
+        query.journal = json_req["query"]["journal"].s();
+    if (json_req["query"].has("paper_type"))
+        query.paper_type = json_req["query"]["paper_type"].s();
+    if (json_req["query"].has("exclude_keywords"))
+        query.exclude_keyword = json_req["query"]["exclude_keywords"].s();
+    if (json_req["query"].has("exact_match_author"))
+        query.exact_match_author = json_req["query"]["exact_match_author"].b();
+    if (json_req["query"].has("exact_match_journal"))
+        query.exact_match_journal = json_req["query"]["exact_match_journal"].b();
+    if (json_req["query"].has("categories_and_ed"))
+        query.categories_and_ed = json_req["query"]["categories_and_ed"].b();
+    if (json_req["query"].has("type") && (json_req["query"]["type"].s() == "document" ||
+                                 json_req["query"]["type"].s() == "sentence")) {
+        string type = json_req["query"]["type"].s();
         if (type == "document") {
             query.type = QueryType::document;
         } else if (type == "sentence") {
@@ -51,14 +87,14 @@ tpc::index::Query get_query(const crow::json::rvalue& json_req, const IndexManag
     } else {
         throw runtime_error("query type not specified");
     }
-    if (json_query.has("case_sensitive")) {
-        query.case_sensitive = json_query["case_sensitive"].b();
+    if (json_req["query"].has("case_sensitive")) {
+        query.case_sensitive = json_req["query"]["case_sensitive"].b();
     }
-    if (json_query.has("sort_by_year")) {
-        query.sort_by_year = json_query["sort_by_year"].b();
+    if (json_req["query"].has("sort_by_year")) {
+        query.sort_by_year = json_req["query"]["sort_by_year"].b();
     }
-    if (json_query.has("corpora") && json_query["corpora"].size() > 0) {
-        for (auto& corpus : json_query["corpora"]) {
+    if (json_req["query"].has("corpora") && json_req["query"]["corpora"].size() > 0) {
+        for (auto& corpus : json_req["query"]["corpora"]) {
             query.literatures.push_back(corpus.s());
         }
     } else {
@@ -128,12 +164,18 @@ int main(int argc, const char* argv[]) {
                 if (json_req.has("count") && 0 < json_req["count"].i() < 200)
                     count = json_req["count"].i();
                 bool include_text(false);
-                if (json_req.has("include_fulltext"))
-                    include_text = json_req["include_fulltext"].b();
+                if (json_req.has("include_fulltext")) {
+                    if (is_superuser(login_database, json_req["token"].s())) {
+                        include_text = json_req["include_fulltext"].b();
+                    } else {
+                        return crow::response(401);
+                    }
+                }
                 tpc::index::Query query;
                 try {
                      query = get_query(json_req, indexManager);
                 } catch (const runtime_error& e) {
+                    cerr << e.what() << endl;
                     return crow::response(400);
                 }
                 // call textpresso library
@@ -157,7 +199,7 @@ int main(int argc, const char* argv[]) {
                 // response
                 crow::json::wvalue json_resp;
                 for (int i = 0; i < doc_details.size(); ++i) {
-                    json_resp[i]["identifier"] = doc_details[i].identifier;
+                    json_resp[i]["identifier"] = doc_details[i].filepath;
                     json_resp[i]["score"] = doc_details[i].score;
                     json_resp[i]["title"] =
                             doc_details[i].title.substr(6, doc_details[i].title.length() - 10);
