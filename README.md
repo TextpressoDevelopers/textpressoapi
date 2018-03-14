@@ -7,4 +7,4 @@ The official instance of the API running on the Textpresso Central server can be
 https://textpressocentral.org:18080/textpresso/api/1.0/<request_name>.
 
 The complete documentation of the API can be found at 
-[ReadTheDocs](http://wb-genedescriptions.readthedocs.io/en/latest/).
+[ReadTheDocs](http://textpressoapi.readthedocs.io/en/latest/).
