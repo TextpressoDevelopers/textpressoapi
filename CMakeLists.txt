@@ -3,15 +3,21 @@ project(textpressoapi)
 
 execute_process(COMMAND git submodule update --init -- thirdparty/SQLiteCpp
         WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
+execute_process(COMMAND git submodule update --init -- thirdparty/crow
+        WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
 
-# set FOO_INCLUDE_DIR properly
 set(SQLiteCpp_INCLUDE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/thirdparty/SQLiteCpp/include
         CACHE PATH "SQLite include directory")
 
+set(crow_INCLUDE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/thirdparty/crow/include
+        CACHE PATH "crow include directory")
+
 # for convenience setup a target
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/thirdparty/SQLiteCpp)
+add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/thirdparty/crow)
 
 include_directories(${SQLiteCpp_INCLUDE_DIR})
+include_directories(${crow_INCLUDE_DIR})
 
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake-modules")
 set(CMAKE_CXX_STANDARD 11)

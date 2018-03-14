@@ -1,3 +1,6 @@
 [submodule "thirdparty/SQLiteCpp"]
 	path = thirdparty/SQLiteCpp
 	url = https://github.com/SRombauts/SQLiteCpp
+[submodule "thirdparty/crow"]
+	path = thirdparty/crow
+	url = https://github.com/ipkn/crow/
