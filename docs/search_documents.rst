@@ -36,7 +36,7 @@ These are the APIs to perform document searches:
 
    .. sourcecode:: http
 
-      POST /textpresso/api/1.0/search_documents HTTP/1.1
+      POST /textpresso/api/v1/search_documents HTTP/1.1
       Host: textpressocentral.org:18080
       Accept: application/json
 
@@ -82,7 +82,7 @@ These are the APIs to perform document searches:
       ]
 
 
-.. http:post:: /textpresso/api/1.0/get_documents_count
+.. http:post:: /textpresso/api/v1/get_documents_count
 
    Get the number of documents that match a search query. **Requires authentication**
 
@@ -97,7 +97,7 @@ These are the APIs to perform document searches:
 
    .. sourcecode:: http
 
-      POST /textpresso/api/1.0/search_documents HTTP/1.1
+      POST /textpresso/api/v1/search_documents HTTP/1.1
       Host: textpressocentral.org:18080
       Accept: application/json
 
@@ -126,7 +126,7 @@ These are the APIs to perform document searches:
       }
 
 
-.. http:get:: /textpresso/api/1.0/available_corpora
+.. http:get:: /textpresso/api/v1/available_corpora
 
    Get the list of corpora available on the server
 
@@ -138,7 +138,7 @@ These are the APIs to perform document searches:
 
    .. sourcecode:: http
 
-      GET /textpresso/api/1.0/available_corpora HTTP/1.1
+      GET /textpresso/api/v1/available_corpora HTTP/1.1
       Host: textpressocentral.org:18080
 
    **Example response**:

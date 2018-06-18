@@ -9,7 +9,7 @@ returned by searches are sorted by their score. Scores for sentence searches is 
 sentences in each document.
 
 The base endpoint of the API is
-*https://textpressocentral.org:18080/textpresso/api/1.0/request_name* where *request_name* is the API to call.
+*https://textpressocentral.org:18080/textpresso/api/v1/request_name* where *request_name* is the API to call.
 
 
 .. toctree::
