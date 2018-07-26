@@ -5,7 +5,7 @@ Search documents indexed by Textpresso through queries on fulltext or sentences.
 
 These are the APIs to perform document searches:
 
-.. http:post:: /textpresso/api/1.0/search_documents
+.. http:post:: /v1/textpresso/api/search_documents
 
    Search for documents indexed by Textpresso. **Requires authentication**
 
@@ -36,20 +36,23 @@ These are the APIs to perform document searches:
 
    .. sourcecode:: http
 
-      POST /textpresso/api/v1/search_documents HTTP/1.1
+      POST /v1/textpresso/api/search_documents HTTP/1.1
       Host: textpressocentral.org:18080
       Accept: application/json
 
       {
-         "keywords": "DYN-1",
-         "type": "document",
-         "case_sensitive": false,
-         "sort_by_year": false,
-         "count": 2,
-         "corpora": [
-                       "C. elegans",
-                       "C. elegans Supplementals"
-                    ]
+         "token": "123456789",
+         "query": {
+            "keywords": "DYN-1",
+            "type": "document",
+            "case_sensitive": false,
+            "sort_by_year": false,
+            "count": 2,
+            "corpora": [
+                          "C. elegans",
+                          "C. elegans Supplementals"
+                       ]
+         }
       }
 
    **Example response**:
@@ -82,7 +85,7 @@ These are the APIs to perform document searches:
       ]
 
 
-.. http:post:: /textpresso/api/v1/get_documents_count
+.. http:post:: /v1/textpresso/api/get_documents_count
 
    Get the number of documents that match a search query. **Requires authentication**
 
@@ -97,20 +100,23 @@ These are the APIs to perform document searches:
 
    .. sourcecode:: http
 
-      POST /textpresso/api/v1/search_documents HTTP/1.1
+      POST /v1/textpresso/api/get_documents_count HTTP/1.1
       Host: textpressocentral.org:18080
       Accept: application/json
 
       {
-         "keywords": "DYN-1",
-         "type": "document",
-         "case_sensitive": false,
-         "sort_by_year": false,
-         "count": 2,
-         "corpora": [
-                       "C. elegans",
-                       "C. elegans Supplementals"
-                    ]
+         "token": "123456789",
+         "query": {
+            "keywords": "DYN-1",
+            "type": "document",
+            "case_sensitive": false,
+            "sort_by_year": false,
+            "count": 2,
+            "corpora": [
+                          "C. elegans",
+                          "C. elegans Supplementals"
+                       ]
+         }
       }
 
    **Example response**:
@@ -126,7 +132,7 @@ These are the APIs to perform document searches:
       }
 
 
-.. http:get:: /textpresso/api/v1/available_corpora
+.. http:get:: /v1/textpresso/api/available_corpora
 
    Get the list of corpora available on the server
 
@@ -138,7 +144,7 @@ These are the APIs to perform document searches:
 
    .. sourcecode:: http
 
-      GET /textpresso/api/v1/available_corpora HTTP/1.1
+      GET /v1/textpresso/api/available_corpora HTTP/1.1
       Host: textpressocentral.org:18080
 
    **Example response**:
@@ -150,3 +156,56 @@ These are the APIs to perform document searches:
       Content-Type: text/javascript
 
       ["C. elegans","C. elegans Supplementals","PMCOA C. elegans","PMCOA Animal"]
+
+.. http:post:: /v1/textpresso/api/get_category_matches_document_fulltext
+
+   Get the list of words in the fulltext of one or more documents that match a specified category. **Requires authentication**
+
+   :<json string token: a valid access token. See :doc:`obtaining_a_token` for further information on how to get one.
+   :<json object query: a query object used to search for the documents (see :doc:`query_object` for more details)
+   :<json string category: a valid category in Textpresso format (e.g., "Gene (C. elegans) (tpgce:0000001)") - see
+                           `Textpresso central category browser <https://www.textpressocentral.org/tpc/browsers>`_ for
+                           the complete list of supported categories.
+
+   **Response Datatype Format**
+
+   The returned data is a json array of objects, each of which represents a document matched by the provided query, and
+   contains the following fields:
+
+   :>json string identifier: the document identifier
+   :>jsonarr string matches: the list of words in the fulltext of the document that matched the specified category
+
+   **Example request**:
+
+   .. sourcecode:: http
+
+      POST /v1/textpresso/api/get_category_matches_document_fulltext HTTP/1.1
+      Host: textpressocentral.org:18080
+      Accept: application/json
+
+      {
+         "token": "123456789",
+         "query": {
+            "accession": "WBPaper00050052",
+            "corpora": [
+                          "C. elegans",
+                          "C. elegans Supplementals"
+                       ]
+         },
+         "category": "Gene (C. elegans) (tpgce:0000001)"
+      }
+
+   **Example response**:
+
+   .. sourcecode:: http
+
+      HTTP/1.1 200 OK
+      Vary: Accept
+      Content-Type: text/javascript
+
+      [
+         {
+            "identifier":"C. elegans/WBPaper00050052/WBPaper00050052.tpcas",
+            "matches": ["apl-1","cdc-42","ceh-36","daf-16","glp-1","hsf-1","ins-33","lin-14","lin-4","mec-4","pmp-3","rab-3","snb-1"]
+         }
+      ]

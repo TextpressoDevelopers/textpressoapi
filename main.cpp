@@ -253,6 +253,50 @@ int main(int argc, const char* argv[]) {
                         return crow::response(json_resp);
                     });
 
+    CROW_ROUTE(app, "/v1/textpresso/api/get_category_matches_document_fulltext")
+            .methods("POST"_method)
+                    ([&indexManager, &login_database](const crow::request& req){
+                        // parse request
+                        auto json_req = crow::json::load(req.body);
+                        if (!json_req)
+                            return crow::response(400);
+                        if (!json_req.has("token")) {
+                            return crow::response(400);
+                        }
+                        if (!is_token_valid(login_database, json_req["token"].s())) {
+                            return crow::response(401);
+                        }
+                        tpc::index::Query query;
+                        try {
+                            query = get_query(json_req, indexManager);
+                        } catch (const runtime_error& e) {
+                            return crow::response(400);
+                        }
+                        if (!json_req.has("category")) {
+                            return crow::response(400);
+                        }
+                        string category = json_req["category"].s();
+                        // response
+                        crow::json::wvalue json_resp;
+                        // call textpresso library
+                        std::set<std::string> matches;
+                        SearchResults results = indexManager.search_documents(query);
+                        int i = 0;
+                        for (auto& result : results.hit_documents) {
+                            DocumentDetails docDetails = indexManager.get_document_details(result, false,
+                                    {"filepath", "fulltext_compressed", "fulltext_cat_compressed"}, {}, {}, {});
+                            json_resp[i]["identifier"] = docDetails.filepath;
+                            matches = indexManager.get_words_belonging_to_category_from_document_fulltext(
+                                    docDetails.fulltext, docDetails.categories_string, category);
+                            int j = 0;
+                            for (auto& word : matches) {
+                                json_resp[i]["matches"][j++] = word;
+                            }
+                            ++i;
+                        }
+                        return crow::response(json_resp);
+                    });
+
     if (!ssl_cert.empty() && !ssl_key.empty()) {
         app.port(18080).ssl_file(ssl_cert, ssl_key).multithreaded().run();
     } else {
