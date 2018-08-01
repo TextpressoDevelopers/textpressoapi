@@ -298,7 +298,12 @@ int main(int argc, const char* argv[]) {
                     });
 
     if (!ssl_cert.empty() && !ssl_key.empty()) {
-        app.port(18080).ssl_file(ssl_cert, ssl_key).multithreaded().run();
+        auto & appref = app
+                .bindaddr("0.0.0.0")
+                .port(18080)
+                .ssl_file(ssl_cert, ssl_key);
+        appref.ssl_context_.set_verify_mode (boost::asio::ssl::verify_none);
+        appref.multithreaded().run();
     } else {
         app.port(18080).multithreaded().run();
     }
