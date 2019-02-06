@@ -161,9 +161,10 @@ int main(int argc, const char* argv[]) {
                 int64_t count(200);
                 if (json_req.has("since_num"))
                     since_num = json_req["since_num"].i();
-                if (json_req.has("count") && 0 < json_req["count"].i() < 200)
+                if (json_req.has("count") && 0 < json_req["count"].i() && json_req["count"].i() < 200)
                     count = json_req["count"].i();
                 bool include_text(false);
+                bool include_sentences(false);
                 if (json_req.has("include_fulltext")) {
                     if (is_superuser(login_database, json_req["token"].s())) {
                         include_text = json_req["include_fulltext"].b();
@@ -177,6 +178,18 @@ int main(int argc, const char* argv[]) {
                 } catch (const runtime_error& e) {
                     cerr << e.what() << endl;
                     return crow::response(400);
+                }
+                set<string> include_sentence_fields = {};
+                if (json_req.has("include_sentences")) {
+                    if (is_superuser(login_database, json_req["token"].s())) {
+                        include_sentences = json_req["include_sentences"].b();
+                        include_sentence_fields = {"sentence_compressed"};
+                        if (include_sentences && query.type == tpc::index::QueryType::document) {
+                            return crow::response(401);
+                        }
+                    } else {
+                        return crow::response(401);
+                    }
                 }
                 // call textpresso library
                 SearchResults results = indexManager.search_documents(query);
@@ -194,8 +207,9 @@ int main(int argc, const char* argv[]) {
                     exclude_doc_fields = {};
                 }
                 auto doc_details = indexManager.get_documents_details(
-                        vector<tpc::index::DocumentSummary>(first_iter, last_iter), query.sort_by_year, false,
-                        tpc::index::DOCUMENTS_FIELDS_DETAILED, {}, exclude_doc_fields);
+                        vector<tpc::index::DocumentSummary>(first_iter, last_iter), query.sort_by_year,
+                        include_sentences, tpc::index::DOCUMENTS_FIELDS_DETAILED, include_sentence_fields,
+                        exclude_doc_fields);
                 // response
                 crow::json::wvalue json_resp;
                 for (int i = 0; i < doc_details.size(); ++i) {
@@ -212,6 +226,11 @@ int main(int argc, const char* argv[]) {
                     if (include_text) {
                         json_resp[i]["fulltext"] = doc_details[i].fulltext;
                         json_resp[i]["abstract"] = doc_details[i].abstract;
+                    }
+                    if (include_sentences) {
+                        for (int j = 0; j < doc_details[i].sentences_details.size(); ++j) {
+                            json_resp[i]["matched_sentences"][j] = doc_details[i].sentences_details[j].sentence_text;
+                        }
                     }
                 }
                 return crow::response(json_resp);

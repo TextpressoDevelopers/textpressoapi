@@ -13,6 +13,8 @@ These are the APIs to perform document searches:
    :<json object query: a query object (see :doc:`query_object` for more details)
    :<json boolean include_fulltext: whether to return the fulltext and abstract of the documents.
                                     *Default value* is **false**
+   :<json boolean include_sentences: whether to return the text of each matched sentence. Valid only for sentence
+                                     searches. *Default value* is **false**
    :<json int since_num: used for pagination. Skip the first results and return entries from the specified number. Note
                          that the counter starts from 0 - i.e., the first document is number 0.
    :<json int count: used for pagination. Return up to the specified number of results. *Maximum value* is **200**
@@ -30,7 +32,9 @@ These are the APIs to perform document searches:
    :>json string journal: the journal of the document
    :>json string doc_type: the type of document (e.g., research article, review)
    :>json string fulltext: the fulltext of the document. Only if *include_fulltext* is set to **true** in the request.
-   :>json string journal: the abstract of the document. Only if *include_fulltext* is set to **true** in the request.
+   :>json string abstract: the abstract of the document. Only if *include_fulltext* is set to **true** in the request.
+   :>jsonarr string matched_sentences: the text of each matched sentence. Only if *include_sentences* is set to
+                                       **true** in the request and the query type is set to **sentence**.
 
    **Example request**:
 
@@ -83,6 +87,12 @@ These are the APIs to perform document searches:
             "journal": "Proc Natl Acad Sci U S A"
          }
       ]
+
+   **Example request using Curl from the shell**
+
+   .. code-block:: bash
+
+      curl -k -d "{\"token\":\"XXXXXXX\", \"query\": {\"keywords\": \"yeast AND two AND hybrid\", \"year\": \"2017\", \"type\": \"document\", \"corpora\": [\"C. elegans\"]}}" https://textpressocentral.org:18080/v1/textpresso/api/search_documents
 
 
 .. http:post:: /v1/textpresso/api/get_documents_count

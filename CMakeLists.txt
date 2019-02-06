@@ -24,7 +24,7 @@ set(CMAKE_CXX_STANDARD 11)
 
 SET(CMAKE_SKIP_BUILD_RPATH  FALSE)
 SET(CMAKE_BUILD_WITH_INSTALL_RPATH TRUE)
-set(CMAKE_INSTALL_RPATH "${CMAKE_INSTALL_PREFIX}/lib:/usr/local/lib")
+set(CMAKE_INSTALL_RPATH "${CMAKE_INSTALL_PREFIX}/lib:/usr/local/lib:${CMAKE_CURRENT_BINARY_DIR}/thirdparty/SQLiteCpp")
 set(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
 
 include_directories("/home/valerio/workspace/caltech/textpresso/libtpc")
