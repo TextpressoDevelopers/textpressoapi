@@ -92,7 +92,7 @@ These are the APIs to perform document searches:
 
    .. code-block:: bash
 
-      curl -k -d "{\"token\":\"XXXXXXX\", \"query\": {\"keywords\": \"yeast AND two AND hybrid\", \"year\": \"2017\", \"type\": \"document\", \"corpora\": [\"C. elegans\"]}}" https://textpressocentral.org:18080/v1/textpresso/api/search_documents
+      curl -k -d "{\"token\":\"XXXXX\", \"query\": {\"keywords\": \"yeast AND two AND hybrid\", \"year\": \"2017\", \"type\": \"sentence\", \"corpora\": [\"C. elegans\"]}, \"include_sentences\": true}" https://textpressocentral.org:18080/v1/textpresso/api/search_documents
 
 
 .. http:post:: /v1/textpresso/api/get_documents_count
