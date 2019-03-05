@@ -168,7 +168,8 @@ int main(int argc, const char* argv[]) {
                 if (json_req.has("count") && 0 < json_req["count"].i() && json_req["count"].i() < 200)
                     count = json_req["count"].i();
                 bool include_text(false);
-                bool include_sentences(false);
+                bool include_match_sentences(false);
+                bool include_all_sentences(false);
                 if (json_req.has("include_fulltext")) {
                     if (is_superuser(login_database, json_req["token"].s())) {
                         include_text = json_req["include_fulltext"].b();
@@ -183,14 +184,23 @@ int main(int argc, const char* argv[]) {
                     cerr << e.what() << endl;
                     return crow::response(400);
                 }
-                set<string> include_sentence_fields = {};
-                if (json_req.has("include_sentences")) {
+                set<string> include_match_sentence_fields = {};
+                if (json_req.has("include_match_sentences")) {
                     if (is_superuser(login_database, json_req["token"].s())) {
-                        include_sentences = json_req["include_sentences"].b();
-                        include_sentence_fields = {"sentence_compressed", "begin"};
-                        if (include_sentences && query.type == tpc::index::QueryType::document) {
+                        include_match_sentences = json_req["include_match_sentences"].b();
+                        include_match_sentence_fields = {"sentence_compressed", "begin"};
+                        if (include_match_sentences && query.type == tpc::index::QueryType::document) {
                             return crow::response(401);
                         }
+                    } else {
+                        return crow::response(401);
+                    }
+                }
+                set<string> include_all_sentence_fields = {};
+                if (json_req.has("include_all_sentences")) {
+                    if (is_superuser(login_database, json_req["token"].s())) {
+                        include_all_sentences = json_req["include_all_sentences"].b();
+                        include_all_sentence_fields = {"sentence_compressed", "begin"};
                     } else {
                         return crow::response(401);
                     }
@@ -212,8 +222,8 @@ int main(int argc, const char* argv[]) {
                 }
                 auto doc_details = indexManager.get_documents_details(
                         vector<tpc::index::DocumentSummary>(first_iter, last_iter), query.sort_by_year,
-                        include_sentences, tpc::index::DOCUMENTS_FIELDS_DETAILED, include_sentence_fields,
-                        exclude_doc_fields);
+                        include_match_sentences, tpc::index::DOCUMENTS_FIELDS_DETAILED, include_match_sentence_fields,
+                        exclude_doc_fields, {}, include_all_sentences, include_all_sentence_fields, {});
                 // response
                 crow::json::wvalue json_resp;
                 for (int i = 0; i < doc_details.size(); ++i) {
@@ -231,11 +241,18 @@ int main(int argc, const char* argv[]) {
                         json_resp[i]["fulltext"] = doc_details[i].fulltext;
                         json_resp[i]["abstract"] = doc_details[i].abstract;
                     }
-                    if (include_sentences) {
-                        sort(doc_details[i].sentences_details.begin(), doc_details[i].sentences_details.end(),
-                                sentence_before);
-                        for (int j = 0; j < doc_details[i].sentences_details.size(); ++j) {
-                            json_resp[i]["matched_sentences"][j] = doc_details[i].sentences_details[j].sentence_text;
+                    if (include_match_sentences) {
+                        sort(doc_details[i].match_sentences_details.begin(),
+                                doc_details[i].match_sentences_details.end(), sentence_before);
+                        for (int j = 0; j < doc_details[i].match_sentences_details.size(); ++j) {
+                            json_resp[i]["matched_sentences"][j] = doc_details[i].match_sentences_details[j].sentence_text;
+                        }
+                    }
+                    if (include_all_sentences) {
+                        sort(doc_details[i].all_sentences_details.begin(), doc_details[i].all_sentences_details.end(),
+                             sentence_before);
+                        for (int j = 0; j < doc_details[i].all_sentences_details.size(); ++j) {
+                            json_resp[i]["all_sentences"][j] = doc_details[i].all_sentences_details[j].sentence_text;
                         }
                     }
                 }
