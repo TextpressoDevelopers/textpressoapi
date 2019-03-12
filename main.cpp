@@ -223,7 +223,7 @@ int main(int argc, const char* argv[]) {
                 auto doc_details = indexManager.get_documents_details(
                         vector<tpc::index::DocumentSummary>(first_iter, last_iter), query.sort_by_year,
                         include_match_sentences, tpc::index::DOCUMENTS_FIELDS_DETAILED, include_match_sentence_fields,
-                        exclude_doc_fields, {}, include_all_sentences, include_all_sentence_fields, {});
+                        exclude_doc_fields, {}, include_all_sentences, include_all_sentence_fields, {}, true, true);
                 // response
                 crow::json::wvalue json_resp;
                 for (int i = 0; i < doc_details.size(); ++i) {
@@ -242,10 +242,10 @@ int main(int argc, const char* argv[]) {
                         json_resp[i]["abstract"] = doc_details[i].abstract;
                     }
                     if (include_match_sentences) {
-                        sort(doc_details[i].match_sentences_details.begin(),
-                                doc_details[i].match_sentences_details.end(), sentence_before);
-                        for (int j = 0; j < doc_details[i].match_sentences_details.size(); ++j) {
-                            json_resp[i]["matched_sentences"][j] = doc_details[i].match_sentences_details[j].sentence_text;
+                        sort(doc_details[i].sentences_details.begin(),
+                                doc_details[i].sentences_details.end(), sentence_before);
+                        for (int j = 0; j < doc_details[i].sentences_details.size(); ++j) {
+                            json_resp[i]["matched_sentences"][j] = doc_details[i].sentences_details[j].sentence_text;
                         }
                     }
                     if (include_all_sentences) {
