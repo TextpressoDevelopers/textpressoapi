@@ -12,8 +12,10 @@ These are the APIs to perform document searches:
    :<json string token: a valid access token. See :doc:`obtaining_a_token` for further information on how to get one.
    :<json object query: a query object (see :doc:`query_object` for more details)
    :<json boolean include_fulltext: whether to return the fulltext and abstract of the documents.
-                                    *Default value* is **false**
-   :<json boolean include_sentences: whether to return the text of each matched sentence. Valid only for sentence
+                                    *Default value* is **false**. Restricted to specific tokens due to copyright.
+   :<json boolean include_all_sentences: whether to return the text of all the sentences in the text.
+                                          *Default value* is **false**. Restricted to specific tokens due to copyright.
+   :<json boolean include_match_sentences: whether to return the text of each matched sentence. Valid only for sentence
                                      searches. *Default value* is **false**
    :<json int since_num: used for pagination. Skip the first results and return entries from the specified number. Note
                          that the counter starts from 0 - i.e., the first document is number 0.
@@ -33,7 +35,9 @@ These are the APIs to perform document searches:
    :>json string doc_type: the type of document (e.g., research article, review)
    :>json string fulltext: the fulltext of the document. Only if *include_fulltext* is set to **true** in the request.
    :>json string abstract: the abstract of the document. Only if *include_fulltext* is set to **true** in the request.
-   :>jsonarr string matched_sentences: the text of each matched sentence. Only if *include_sentences* is set to
+   :>jsonarr string all_sentences: the text of each sentence. Only if *include_all_sentences* is set to
+                                       **true** in the request.
+   :>jsonarr string matched_sentences: the text of each matched sentence. Only if *include_match_sentences* is set to
                                        **true** in the request and the query type is set to **sentence**.
 
    **Example request**:
