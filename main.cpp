@@ -186,13 +186,9 @@ int main(int argc, const char* argv[]) {
                 }
                 set<string> include_match_sentence_fields = {};
                 if (json_req.has("include_match_sentences")) {
-                    if (is_superuser(login_database, json_req["token"].s())) {
-                        include_match_sentences = json_req["include_match_sentences"].b();
-                        include_match_sentence_fields = {"sentence_compressed", "begin"};
-                        if (include_match_sentences && query.type == tpc::index::QueryType::document) {
-                            return crow::response(401);
-                        }
-                    } else {
+                    include_match_sentences = json_req["include_match_sentences"].b();
+                    include_match_sentence_fields = {"sentence_compressed", "begin"};
+                    if (include_match_sentences && query.type == tpc::index::QueryType::document) {
                         return crow::response(401);
                     }
                 }
