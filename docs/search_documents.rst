@@ -32,6 +32,7 @@ These are the APIs to perform document searches:
    :>json string author: the author(s) of the document
    :>json string accession: the accession of the document
    :>json string journal: the journal of the document
+   :>json string year: publication year
    :>json string doc_type: the type of document (e.g., research article, review)
    :>json string fulltext: the fulltext of the document. Only if *include_fulltext* is set to **true** in the request.
    :>json string abstract: the abstract of the document. Only if *include_fulltext* is set to **true** in the request.

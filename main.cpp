@@ -233,6 +233,7 @@ int main(int argc, const char* argv[]) {
                     json_resp[i]["journal"] =
                             doc_details[i].journal.substr(6, doc_details[i].journal.length() - 10);
                     json_resp[i]["doc_type"] = doc_details[i].type;
+                    json_resp[i]["year"] = doc_details[i].year;
                     if (include_text) {
                         json_resp[i]["fulltext"] = doc_details[i].fulltext;
                         json_resp[i]["abstract"] = doc_details[i].abstract;
