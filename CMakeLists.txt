@@ -41,4 +41,7 @@ include_directories(${Textpresso_INCLUDE_DIR})
 set(SOURCE_FILES main.cpp)
 add_executable(textpressoapi ${SOURCE_FILES})
 target_link_libraries(textpressoapi boost_system pthread textpresso uima xerces-c lucene++ SQLiteCpp sqlite3 pthread dl
-        boost_filesystem boost_system boost_program_options crypto ssl)
+  boost_filesystem boost_system boost_program_options crypto ssl)
+install(TARGETS textpressoapi
+        RUNTIME DESTINATION bin
+        LIBRARY DESTINATION lib)

@@ -102,7 +102,7 @@ tpc::index::Query get_query(const crow::json::rvalue& json_req, const IndexManag
             query.literatures.push_back(corpus.s());
         }
     } else {
-        query.literatures = indexManager.get_available_corpora();
+        query.literatures = indexManager.get_available_corpora(tpc::index::CAS_ROOT_LOCATION.c_str());
     }
     return query;
 }
@@ -258,7 +258,7 @@ int main(int argc, const char* argv[]) {
 
     CROW_ROUTE(app, "/v1/textpresso/api/available_corpora")([&indexManager] {
         crow::json::wvalue x;
-        auto corpora = indexManager.get_available_corpora();
+        auto corpora = indexManager.get_available_corpora(tpc::index::CAS_ROOT_LOCATION.c_str());
         for (int i = 0; i < corpora.size(); ++i) {
             x[i] = corpora[i];
         }
