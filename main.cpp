@@ -124,7 +124,7 @@ int main(int argc, const char* argv[]) {
                 ("index,i", po::value<string>(&index_path)->default_value("/usr/local/textpresso/luceneindex"),
                  "textpresso index")
                 ("login-database,d", po::value<string>(&login_database)->required(),
-                 "textpresso index")
+                 "database for logins and tokens")
                 ("ssl_cert,c", po::value<string>(&ssl_cert)->default_value(""),
                  "ssl certificate file")
                 ("ssl_key,k", po::value<string>(&ssl_key)->default_value(""),
