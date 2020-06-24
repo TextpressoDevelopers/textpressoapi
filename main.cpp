@@ -305,6 +305,12 @@ int main(int argc, const char* argv[]) {
                         if (!is_token_valid(login_database, json_req["token"].s())) {
                             return crow::response(401);
                         }
+                        int64_t since_num(0);
+                        int64_t count(10000);
+                        if (json_req.has("since_num"))
+                            since_num = json_req["since_num"].i();
+                        if (json_req.has("count") && 0 < json_req["count"].i() && json_req["count"].i() < 200)
+                            count = json_req["count"].i();
                         tpc::index::Query query;
                         try {
                             query = get_query(json_req, indexManager);
@@ -315,23 +321,31 @@ int main(int argc, const char* argv[]) {
                             return crow::response(400);
                         }
                         string category = json_req["category"].s();
-                        // response
-                        crow::json::wvalue json_resp;
                         // call textpresso library
                         std::set<std::string> matches;
                         SearchResults results = indexManager.search_documents(query);
-                        int i = 0;
-                        for (auto& result : results.hit_documents) {
-                            DocumentDetails docDetails = indexManager.get_document_details(result, false,
-                                    {"filepath", "fulltext_compressed", "fulltext_cat_compressed"}, {}, {}, {});
-                            json_resp[i]["identifier"] = docDetails.filepath;
+                        auto first_iter = results.hit_documents.begin() + since_num;
+                        if (first_iter > results.hit_documents.end()) {
+                            first_iter = results.hit_documents.end();
+                        }
+                        auto last_iter = results.hit_documents.begin() + since_num + count;
+                        if (last_iter > results.hit_documents.end()) {
+                            last_iter = results.hit_documents.end();
+                        }
+                        auto doc_details = indexManager.get_documents_details(
+                                vector<tpc::index::DocumentSummary>(first_iter, last_iter),
+                                        false, false,
+                                        {"filepath", "fulltext_compressed", "fulltext_cat_compressed"}, {}, {}, {});
+                        // response
+                        crow::json::wvalue json_resp;
+                        for (int i = 0; i < doc_details.size(); ++i) {
+                            json_resp[i]["identifier"] = doc_details[i].filepath;
                             matches = indexManager.get_words_belonging_to_category_from_document_fulltext(
-                                    docDetails.fulltext, docDetails.categories_string, category);
+                                    doc_details[i].fulltext, doc_details[i].categories_string, category);
                             int j = 0;
                             for (auto& word : matches) {
                                 json_resp[i]["matches"][j++] = word;
                             }
-                            ++i;
                         }
                         return crow::response(json_resp);
                     });
