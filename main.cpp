@@ -306,10 +306,10 @@ int main(int argc, const char* argv[]) {
                             return crow::response(401);
                         }
                         int64_t since_num(0);
-                        int64_t count(10000);
+                        int64_t count(10000000);
                         if (json_req.has("since_num"))
                             since_num = json_req["since_num"].i();
-                        if (json_req.has("count") && 0 < json_req["count"].i() && json_req["count"].i() < 200)
+                        if (json_req.has("count") && json_req["count"].i() > 0)
                             count = json_req["count"].i();
                         tpc::index::Query query;
                         try {
