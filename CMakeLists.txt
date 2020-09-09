@@ -10,7 +10,9 @@ set(SQLiteCpp_INCLUDE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/thirdparty/SQLiteCpp/inclu
         CACHE PATH "SQLite include directory")
 
 set(crow_INCLUDE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/thirdparty/crow/include
-        CACHE PATH "crow include directory")
+  CACHE PATH "crow include directory")
+
+set(CMAKE_CXX_FLAGS "-DBOOST_NO_CXX11_SCOPED_ENUMS -w")
 
 # for convenience setup a target
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/thirdparty/SQLiteCpp)
@@ -27,7 +29,7 @@ SET(CMAKE_BUILD_WITH_INSTALL_RPATH TRUE)
 set(CMAKE_INSTALL_RPATH "${CMAKE_INSTALL_PREFIX}/lib:/usr/local/lib:${CMAKE_CURRENT_BINARY_DIR}/thirdparty/SQLiteCpp")
 set(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
 
-include_directories("/home/valerio/workspace/caltech/textpresso/libtpc")
+include_directories("/home/mueller/swd//libtpc")
 
 find_package(APR REQUIRED)
 include_directories(${APR_INCLUDE_DIR})
