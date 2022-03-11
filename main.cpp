@@ -13,7 +13,6 @@ using namespace boost::filesystem;
 
 namespace po = boost::program_options;
 
-
 bool is_token_valid(const string& db_path, const string& token) {
     try {
         SQLite::Database db(db_path);
@@ -21,8 +20,7 @@ bool is_token_valid(const string& db_path, const string& token) {
         query.bind(1, token);
         query.executeStep();
         return query.hasRow();
-    }
-    catch (std::exception& e) {
+    } catch (std::exception& e) {
         std::cout << "exception: " << e.what() << std::endl;
     }
 }
@@ -34,12 +32,11 @@ bool is_superuser(const string& db_path, const string& token) {
         query.bind(1, token);
         query.executeStep();
         if (query.hasRow()) {
-            return static_cast<bool>(static_cast<int>(query.getColumn("superuser")));
+            return static_cast<bool> (static_cast<int> (query.getColumn("superuser")));
         } else {
             return false;
         }
-    }
-    catch (std::exception& e) {
+    } catch (std::exception& e) {
         std::cout << "exception: " << e.what() << std::endl;
     }
 }
@@ -53,8 +50,10 @@ tpc::index::Query get_query(const crow::json::rvalue& json_req, const IndexManag
     if (!json_req.has("query")) {
         throw runtime_error("query not specified");
     }
-    if (json_req["query"].has("keywords"))
+    if (json_req["query"].has("keywords")) {
         query.keyword = json_req["query"]["keywords"].s();
+        query.keyword = "\\(" + query.keyword +"\\)";
+    }
     if (json_req["query"].has("categories") && json_req["query"]["categories"].size() > 0) {
         for (auto& category : json_req["query"]["categories"]) {
             query.categories.push_back(category.s());
@@ -80,14 +79,34 @@ tpc::index::Query get_query(const crow::json::rvalue& json_req, const IndexManag
         query.exact_match_journal = json_req["query"]["exact_match_journal"].b();
     if (json_req["query"].has("categories_and_ed"))
         query.categories_and_ed = json_req["query"]["categories_and_ed"].b();
-    if (json_req["query"].has("type") && (json_req["query"]["type"].s() == "document" ||
-                                 json_req["query"]["type"].s() == "sentence")) {
+    if (json_req["query"].has("type")) {
         string type = json_req["query"]["type"].s();
-        if (type == "document") {
+        if (type == "abstract")
+            query.type = QueryType::abstract;
+        else if (type == "acknowledgments")
+            query.type = QueryType::acknowledgments;
+        else if (type == "background")
+            query.type = QueryType::background;
+        else if (type == "conclusion")
+            query.type = QueryType::conclusion;
+        else if (type == "design")
+            query.type = QueryType::design;
+        else if (type == "discussion")
+            query.type = QueryType::discussion;
+        else if (type == "document")
             query.type = QueryType::document;
-        } else if (type == "sentence") {
+        else if (type == "introduction")
+            query.type = QueryType::introduction;
+        else if (type == "materials and methods")
+            query.type = QueryType::materials;
+        else if (type == "references")
+            query.type = QueryType::references;
+        else if (type == "result")
+            query.type = QueryType::result;
+        else if (type == "sentence")
             query.type = QueryType::sentence;
-        }
+        else if (type == "title")
+            query.type = QueryType::title;
     } else {
         throw runtime_error("query type not specified");
     }
@@ -122,13 +141,13 @@ int main(int argc, const char* argv[]) {
         desc.add_options()
                 ("help,h", "produce help message")
                 ("index,i", po::value<string>(&index_path)->default_value("/usr/local/textpresso/luceneindex"),
-                 "textpresso index")
+                "textpresso index")
                 ("login-database,d", po::value<string>(&login_database)->required(),
-                 "database for logins and tokens")
+                "database for logins and tokens")
                 ("ssl_cert,c", po::value<string>(&ssl_cert)->default_value(""),
-                 "ssl certificate file")
+                "ssl certificate file")
                 ("ssl_key,k", po::value<string>(&ssl_key)->default_value(""),
-                 "ssl key file");
+                "ssl key file");
         po::store(po::command_line_parser(argc, argv).options(desc).positional(p).run(), vm);
         po::notify(vm);
 
@@ -150,36 +169,36 @@ int main(int argc, const char* argv[]) {
 
     CROW_ROUTE(app, "/v1/textpresso/api/search_documents")
             .methods("POST"_method)
-            ([&indexManager, &login_database](const crow::request& req){
+            ([&indexManager, &login_database](const crow::request & req) {
                 // parse request
                 auto json_req = crow::json::load(req.body);
                 if (!json_req)
                     return crow::response(400);
-                if (!json_req.has("token")) {
-                    return crow::response(401);
-                }
+                    if (!json_req.has("token")) {
+                        return crow::response(401);
+                    }
                 if (!is_token_valid(login_database, json_req["token"].s())) {
                     return crow::response(401);
                 }
                 int64_t since_num(0);
                 int64_t count(200);
                 if (json_req.has("since_num"))
-                    since_num = json_req["since_num"].i();
-                if (json_req.has("count") && 0 < json_req["count"].i() && json_req["count"].i() < 200)
-                    count = json_req["count"].i();
-                bool include_text(false);
-                bool include_match_sentences(false);
-                bool include_all_sentences(false);
-                if (json_req.has("include_fulltext")) {
-                    if (is_superuser(login_database, json_req["token"].s())) {
-                        include_text = json_req["include_fulltext"].b();
-                    } else {
-                        return crow::response(401);
-                    }
-                }
+                        since_num = json_req["since_num"].i();
+                    if (json_req.has("count") && 0 < json_req["count"].i() && json_req["count"].i() < 200)
+                            count = json_req["count"].i();
+                            bool include_text(false);
+                            bool include_match_sentences(false);
+                            bool include_all_sentences(false);
+                        if (json_req.has("include_fulltext")) {
+                            if (is_superuser(login_database, json_req["token"].s())) {
+                                include_text = json_req["include_fulltext"].b();
+                            } else {
+                                return crow::response(401);
+                            }
+                        }
                 tpc::index::Query query;
                 try {
-                     query = get_query(json_req, indexManager);
+                    query = get_query(json_req, indexManager);
                 } catch (const runtime_error& e) {
                     cerr << e.what() << endl;
                     return crow::response(400);
@@ -187,8 +206,8 @@ int main(int argc, const char* argv[]) {
                 set<string> include_match_sentence_fields = {};
                 if (json_req.has("include_match_sentences")) {
                     include_match_sentences = json_req["include_match_sentences"].b();
-                    include_match_sentence_fields = {"sentence_compressed", "begin"};
-                    if (include_match_sentences && query.type == tpc::index::QueryType::document) {
+                            include_match_sentence_fields = {"sentence_compressed", "begin"};
+                    if (include_match_sentences && (query.type != tpc::index::QueryType::sentence)) {
                         return crow::response(401);
                     }
                 }
@@ -196,7 +215,7 @@ int main(int argc, const char* argv[]) {
                 if (json_req.has("include_all_sentences")) {
                     if (is_superuser(login_database, json_req["token"].s())) {
                         include_all_sentences = json_req["include_all_sentences"].b();
-                        include_all_sentence_fields = {"sentence_compressed", "begin"};
+                                include_all_sentence_fields = {"sentence_compressed", "begin"};
                     } else {
                         return crow::response(401);
                     }
@@ -212,31 +231,31 @@ int main(int argc, const char* argv[]) {
                     last_iter = results.hit_documents.end();
                 }
                 set<string> exclude_doc_fields = {"fulltext_compressed", "abstract_compressed",
-                                                     "fulltext_cat_compressed"};
+                    "fulltext_cat_compressed"};
                 if (include_text) {
                     exclude_doc_fields = {};
                 }
                 auto doc_details = indexManager.get_documents_details(
                         vector<tpc::index::DocumentSummary>(first_iter, last_iter), query.sort_by_year,
                         include_match_sentences, tpc::index::DOCUMENTS_FIELDS_DETAILED, include_match_sentence_fields,
-                        exclude_doc_fields, {}, include_all_sentences, include_all_sentence_fields, {}, true, true);
+                        exclude_doc_fields,{}, include_all_sentences, include_all_sentence_fields,{}, true, true);
                 // response
                 crow::json::wvalue json_resp;
                 for (int i = 0; i < doc_details.size(); ++i) {
                     json_resp[i]["identifier"] = doc_details[i].filepath;
-                    json_resp[i]["score"] = doc_details[i].score;
-                    json_resp[i]["title"] =
+                            json_resp[i]["score"] = doc_details[i].score;
+                            json_resp[i]["title"] =
                             doc_details[i].title.substr(6, doc_details[i].title.length() - 10);
-                    json_resp[i]["author"] =
+                            json_resp[i]["author"] =
                             doc_details[i].author.substr(6, doc_details[i].author.length() - 10);
-                    json_resp[i]["accession"] = doc_details[i].accession;
-                    json_resp[i]["journal"] =
+                            json_resp[i]["accession"] = doc_details[i].accession;
+                            json_resp[i]["journal"] =
                             doc_details[i].journal.substr(6, doc_details[i].journal.length() - 10);
-                    json_resp[i]["doc_type"] = doc_details[i].type;
-                    json_resp[i]["year"] = doc_details[i].year;
+                            json_resp[i]["doc_type"] = doc_details[i].type;
+                            json_resp[i]["year"] = doc_details[i].year;
                     if (include_text) {
                         json_resp[i]["fulltext"] = doc_details[i].fulltext;
-                        json_resp[i]["abstract"] = doc_details[i].abstract;
+                                json_resp[i]["abstract"] = doc_details[i].abstract;
                     }
                     if (include_match_sentences) {
                         sort(doc_details[i].sentences_details.begin(),
@@ -247,7 +266,7 @@ int main(int argc, const char* argv[]) {
                     }
                     if (include_all_sentences) {
                         sort(doc_details[i].all_sentences_details.begin(), doc_details[i].all_sentences_details.end(),
-                             sentence_before);
+                                sentence_before);
                         for (int j = 0; j < doc_details[i].all_sentences_details.size(); ++j) {
                             json_resp[i]["all_sentences"][j] = doc_details[i].all_sentences_details[j].sentence_text;
                         }
@@ -267,95 +286,100 @@ int main(int argc, const char* argv[]) {
 
     CROW_ROUTE(app, "/v1/textpresso/api/get_documents_count")
             .methods("POST"_method)
-                    ([&indexManager, &login_database](const crow::request& req){
-                        // parse request
-                        auto json_req = crow::json::load(req.body);
-                        if (!json_req)
-                            return crow::response(400);
-                        if (!json_req.has("token")) {
-                            return crow::response(400);
-                        }
-                        if (!is_token_valid(login_database, json_req["token"].s())) {
-                            return crow::response(401);
-                        }
-                        tpc::index::Query query;
-                        try {
-                            query = get_query(json_req, indexManager);
-                        } catch (const runtime_error& e) {
-                            return crow::response(400);
-                        }
-                        // call textpresso library
-                        SearchResults results = indexManager.search_documents(query);
-                        // response
-                        crow::json::wvalue json_resp;
-                        json_resp = results.hit_documents.size();
-                        return crow::response(json_resp);
-                    });
+            ([&indexManager, &login_database](const crow::request & req) {
+                // parse request
+                auto json_req = crow::json::load(req.body);
+                if (!json_req)
+                    return crow::response(400);
+                    if (!json_req.has("token")) {
+                        return crow::response(400);
+                    }
+                if (!is_token_valid(login_database, json_req["token"].s())) {
+                    return crow::response(401);
+                }
+                tpc::index::Query query;
+                try {
+                    query = get_query(json_req, indexManager);
+                } catch (const runtime_error& e) {
+                    return crow::response(400);
+                }
+                // call textpresso library
+                SearchResults results = indexManager.search_documents(query);
+                // response
+                crow::json::wvalue json_resp;
+                json_resp = results.hit_documents.size();
+                return crow::response(json_resp);
+            });
 
     CROW_ROUTE(app, "/v1/textpresso/api/get_category_matches_document_fulltext")
             .methods("POST"_method)
-                    ([&indexManager, &login_database](const crow::request& req){
-                        // parse request
-                        auto json_req = crow::json::load(req.body);
-                        if (!json_req)
-                            return crow::response(400);
-                        if (!json_req.has("token")) {
-                            return crow::response(400);
-                        }
-                        if (!is_token_valid(login_database, json_req["token"].s())) {
-                            return crow::response(401);
-                        }
-                        int64_t since_num(0);
-                        int64_t count(10000000);
-                        if (json_req.has("since_num"))
-                            since_num = json_req["since_num"].i();
-                        if (json_req.has("count") && json_req["count"].i() > 0)
+            ([&indexManager, &login_database](const crow::request & req) {
+                // parse request
+                auto json_req = crow::json::load(req.body);
+                if (!json_req)
+                    return crow::response(400);
+                    if (!json_req.has("token")) {
+                        return crow::response(400);
+                    }
+                if (!is_token_valid(login_database, json_req["token"].s())) {
+                    return crow::response(401);
+                }
+                int64_t since_num(0);
+                int64_t count(10000000);
+                if (json_req.has("since_num"))
+                        since_num = json_req["since_num"].i();
+                    if (json_req.has("count") && json_req["count"].i() > 0)
                             count = json_req["count"].i();
-                        tpc::index::Query query;
+                            tpc::index::Query query;
                         try {
                             query = get_query(json_req, indexManager);
                         } catch (const runtime_error& e) {
                             return crow::response(400);
                         }
-                        if (!json_req.has("category")) {
-                            return crow::response(400);
-                        }
-                        string category = json_req["category"].s();
-                        // call textpresso library
-                        std::set<std::string> matches;
-                        SearchResults results = indexManager.search_documents(query);
-                        auto first_iter = results.hit_documents.begin() + since_num;
-                        if (first_iter > results.hit_documents.end()) {
-                            first_iter = results.hit_documents.end();
-                        }
-                        auto last_iter = results.hit_documents.begin() + since_num + count;
-                        if (last_iter > results.hit_documents.end()) {
-                            last_iter = results.hit_documents.end();
-                        }
-                        auto doc_details = indexManager.get_documents_details(
-                                vector<tpc::index::DocumentSummary>(first_iter, last_iter),
-                                        false, false,
-                                        {"filepath", "fulltext_compressed", "fulltext_cat_compressed"}, {}, {}, {});
-                        // response
-                        crow::json::wvalue json_resp;
-                        for (int i = 0; i < doc_details.size(); ++i) {
-                            json_resp[i]["identifier"] = doc_details[i].filepath;
+                if (!json_req.has("category")) {
+                    return crow::response(400);
+                }
+                string category = json_req["category"].s();
+                // call textpresso library
+                std::set<std::string> matches;
+                SearchResults results = indexManager.search_documents(query);
+                auto first_iter = results.hit_documents.begin() + since_num;
+                if (first_iter > results.hit_documents.end()) {
+                    first_iter = results.hit_documents.end();
+                }
+                auto last_iter = results.hit_documents.begin() + since_num + count;
+                if (last_iter > results.hit_documents.end()) {
+                    last_iter = results.hit_documents.end();
+                }
+                auto doc_details = indexManager.get_documents_details(
+                        vector<tpc::index::DocumentSummary>(first_iter, last_iter),
+                        false, false,{"filepath", "fulltext_compressed", "fulltext_cat_compressed"},
+                {
+                },
+                {
+                },
+                {
+                });
+                // response
+                crow::json::wvalue json_resp;
+                for (int i = 0; i < doc_details.size(); ++i) {
+                    json_resp[i]["identifier"] = doc_details[i].filepath;
                             matches = indexManager.get_words_belonging_to_category_from_document_fulltext(
-                                    doc_details[i].fulltext, doc_details[i].categories_string, category);
+                            doc_details[i].fulltext, doc_details[i].categories_string, category);
                             int j = 0;
-                            for (auto& word : matches) {
-                                json_resp[i]["matches"][j++] = word;
-                            }
-                        }
-                        return crow::response(json_resp);
-                    });
+                    for (auto& word : matches) {
+                        json_resp[i]["matches"][j++] = word;
+                    }
+                }
+                return crow::response(json_resp);
+            });
 
     if (!ssl_cert.empty() && !ssl_key.empty()) {
         auto & appref = app
                 .bindaddr("0.0.0.0")
                 .port(18080)
                 .ssl_file(ssl_cert, ssl_key);
-        appref.ssl_context_.set_verify_mode (boost::asio::ssl::verify_none);
+        appref.ssl_context_.set_verify_mode(boost::asio::ssl::verify_none);
         appref.multithreaded().run();
     } else {
         app.port(18080).multithreaded().run();
